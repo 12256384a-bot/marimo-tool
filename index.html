@@ -528,7 +528,7 @@ E｜プロフィール自然誘導（100〜150字）
 async function callClaude(apiKey, params) {
   const cleanKey = (apiKey || '').replace(/[^\x20-\x7E]/g, '').trim();
   const body = new Blob([JSON.stringify(params)], { type: 'application/json' });
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://shy-scene-1f62.12256384a.workers.dev/', {
     method: 'POST',
     headers: new Headers([
       ['x-api-key', cleanKey],
