@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>まりも ツール</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e7e9ea;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    /* パスワード画面 */
+    #lock-screen {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh;
+    }
+    #lock-screen h1 { font-size: 1.4rem; margin-bottom: 24px; color: #1d9bf0; }
+    #lock-screen input {
+      width: 100%; max-width: 320px; padding: 14px; border-radius: 12px;
+      border: 1px solid #333; background: #1e2732; color: #e7e9ea;
+      font-size: 1rem; text-align: center; margin-bottom: 12px;
+    }
+    #lock-screen button {
+      width: 100%; max-width: 320px; padding: 14px; border-radius: 12px;
+      border: none; background: #1d9bf0; color: #fff; font-size: 1rem; font-weight: bold; cursor: pointer;
+    }
+    #lock-error { color: #f4212e; margin-top: 10px; font-size: 0.9rem; }
+
+    /* タブナビ */
+    #app { display: none; max-width: 520px; margin: 0 auto; }
+    .nav-tabs {
+      display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 12px;
+      overflow-x: auto;
+    }
+    .nav-tab { white-space: nowrap; }
+    .nav-tab {
+      padding: 8px 18px; border-radius: 20px; border: 1px solid #333;
+      background: #1a1a1a; color: #888; font-size: 14px; cursor: pointer; white-space: nowrap;
+    }
+    .nav-tab.active { background: #1d9bf0; border-color: #1d9bf0; color: #fff; }
+
+    /* ポスト作成タブ */
+    #tab-post { display: block; }
+    h2 { font-size: 1.2rem; margin-bottom: 16px; color: #1d9bf0; text-align: center; }
+    .section { margin-bottom: 16px; }
+    label { font-size: 0.85rem; color: #71767b; display: block; margin-bottom: 6px; }
+    select, textarea {
+      width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #333;
+      background: #1e2732; color: #e7e9ea; font-size: 0.95rem;
+    }
+    select { height: 48px; }
+    textarea { min-height: 120px; resize: vertical; line-height: 1.6; }
+    .char-count { text-align: right; font-size: 0.8rem; margin-top: 4px; color: #71767b; }
+    .char-count.over { color: #f4212e; }
+    .btn-primary {
+      width: 100%; padding: 16px; border-radius: 12px; border: none;
+      background: #1d9bf0; color: #fff; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 12px;
+    }
+    .btn-primary:disabled { background: #333; color: #71767b; cursor: not-allowed; }
+    .btn-outline {
+      width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #1d9bf0;
+      background: transparent; color: #1d9bf0; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 12px;
+    }
+    .btn-outline:disabled { border-color: #333; color: #71767b; cursor: not-allowed; }
+    .btn-sub {
+      width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #333;
+      background: transparent; color: #71767b; font-size: 0.9rem; cursor: pointer;
+    }
+    #post-status { text-align: center; font-size: 0.85rem; color: #71767b; margin-top: 8px; min-height: 20px; }
+    #post-status.error { color: #f4212e; }
+    #post-status.success { color: #00ba7c; }
+    .spinner {
+      display: inline-block; width: 16px; height: 16px; border: 2px solid #fff;
+      border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .settings-toggle {
+      text-align: center; margin-top: 16px; font-size: 0.8rem; color: #71767b; cursor: pointer; text-decoration: underline;
+    }
+    #settings-panel {
+      display: none; margin-top: 12px; padding: 12px; border: 1px solid #333; border-radius: 12px;
+    }
+    #settings-panel input {
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333;
+      background: #0f1117; color: #e7e9ea; font-size: 0.85rem; font-family: monospace; margin-top: 6px;
+    }
+    .btn-save-key {
+      width: 100%; padding: 10px; border-radius: 8px; border: none;
+      background: #333; color: #e7e9ea; font-size: 0.85rem; cursor: pointer; margin-top: 8px;
+    }
+
+    /* 承認タブ */
+    #tab-approve { display: none; }
+    .approve-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .approve-header h2 { margin-bottom: 0; }
+    .stats-text { font-size: 12px; color: #555; }
+    .sub-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+    .sub-tab {
+      padding: 6px 14px; border-radius: 16px; border: 1px solid #333;
+      background: #1a1a1a; color: #666; font-size: 13px; cursor: pointer;
+    }
+    .sub-tab.active { background: #1d9bf0; border-color: #1d9bf0; color: #fff; }
+
+    .draft-card {
+      background: #1a1a1a; border: 1px solid #222; border-radius: 14px;
+      padding: 14px; margin-bottom: 10px;
+    }
+    .draft-card.approved { border-color: #00c853; }
+    .draft-card.posted { opacity: 0.5; }
+    .draft-meta { font-size: 11px; color: #555; margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
+    }
+    .badge-pending { background: #222; color: #666; }
+    .badge-approved { background: #00c85322; color: #00c853; }
+    .badge-posted { background: #1a1a1a; color: #444; }
+    .draft-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+    .draft-edit {
+      width: 100%; background: #111; color: #eee; border: 1px solid #333; border-radius: 8px;
+      padding: 10px; font-size: 14px; line-height: 1.6; margin-top: 10px; resize: vertical;
+      min-height: 100px; display: none; font-family: inherit;
+    }
+    .card-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .ca-btn {
+      padding: 6px 14px; border-radius: 14px; border: none; font-size: 13px; cursor: pointer;
+    }
+    .ca-approve { background: #00c853; color: #fff; }
+    .ca-unapprove { background: #333; color: #aaa; }
+    .ca-edit { background: #222; color: #888; border: 1px solid #333; }
+    .ca-delete { background: #222; color: #ff4444; border: 1px solid #ff444433; }
+    .empty-msg { text-align: center; padding: 32px; color: #444; font-size: 14px; }
+    .loading-msg { text-align: center; padding: 32px; color: #555; }
+
+    .save-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #111; border-top: 1px solid #222;
+      padding: 12px 16px; display: none; justify-content: space-between; align-items: center;
+    }
+    .save-bar.visible { display: flex; }
+    .save-bar span { font-size: 13px; color: #888; }
+    .btn-save-all {
+      background: #00c853; color: #fff; padding: 10px 22px; border-radius: 20px;
+      border: none; font-size: 14px; cursor: pointer; font-weight: bold;
+    }
+    .gh-token-area { margin-bottom: 14px; }
+    .gh-token-area input {
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333;
+      background: #111; color: #eee; font-size: 13px; font-family: monospace; margin-top: 4px;
+    }
+    .gh-token-area button {
+      margin-top: 6px; padding: 8px 16px; border-radius: 8px; border: none;
+      background: #333; color: #eee; font-size: 13px; cursor: pointer;
+    }
+    .toast {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: #222; color: #fff; padding: 10px 20px; border-radius: 20px;
+      font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999;
+    }
+    .toast.show { opacity: 1; }
+    .pb80 { height: 80px; }
+
+    /* ポスト一覧 */
+    .post-card {
+      background: #1a1a1a; border: 1px solid #222; border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 10px;
+    }
+    .post-card-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; color: #e7e9ea; }
+    .post-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .post-card-len { font-size: 11px; }
+    .post-card-len.over { color: #f4212e; }
+    .post-card-len.ok { color: #555; }
+    .btn-copy-post {
+      padding: 4px 12px; border-radius: 12px; border: 1px solid #333;
+      background: transparent; color: #888; font-size: 12px; cursor: pointer;
+    }
+
+    /* コメント作成 */
+    #comment-status { text-align: center; font-size: 0.85rem; color: #71767b; margin: 8px 0; min-height: 20px; }
+    #comment-status.error { color: #f4212e; }
+    .comment-section-title {
+      font-size: 13px; color: #555; margin: 16px 0 8px; padding-bottom: 4px;
+      border-bottom: 1px solid #222;
+    }
+    .comment-card {
+      background: #1a1a1a; border: 1px solid #222; border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 8px; position: relative;
+    }
+    .comment-card.humor { border-left: 3px solid #f59e0b; }
+    .comment-card.serious { border-left: 3px solid #1d9bf0; }
+    .comment-text { font-size: 14px; line-height: 1.6; color: #e7e9ea; white-space: pre-wrap; }
+    .comment-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .comment-len { font-size: 11px; color: #555; }
+    .btn-copy-comment {
+      padding: 4px 12px; border-radius: 12px; border: 1px solid #333;
+      background: transparent; color: #888; font-size: 12px; cursor: pointer;
+    }
+    .btn-copy-comment:active { background: #333; }
+
+    /* キーワード一覧 */
+    .kw-section { margin-bottom: 16px; }
+    .kw-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .kw-header label { font-size: 0.85rem; color: #71767b; }
+    .kw-header span { font-size: 12px; color: #555; cursor: pointer; text-decoration: underline; }
+    .kw-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; max-height: 160px; overflow-y: auto; }
+    .kw-tag {
+      padding: 5px 12px; border-radius: 20px; border: 1px solid #333;
+      background: #1a1a1a; color: #888; font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; gap: 4px; transition: background 0.15s;
+    }
+    .kw-tag:active { background: #1d9bf022; border-color: #1d9bf0; color: #1d9bf0; }
+    .kw-tag .kw-del { color: #444; font-size: 11px; line-height: 1; margin-left: 2px; }
+    .kw-tag .kw-del:hover { color: #f4212e; }
+    .kw-add-row { display: flex; gap: 6px; }
+    .kw-add-input {
+      flex: 1; padding: 8px 12px; border-radius: 20px; border: 1px solid #333;
+      background: #1a1a1a; color: #eee; font-size: 13px;
+    }
+    .kw-add-input:focus { outline: none; border-color: #555; }
+    .kw-add-btn {
+      padding: 8px 16px; border-radius: 20px; border: none;
+      background: #333; color: #eee; font-size: 13px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<!-- パスワード画面 -->
+<div id="lock-screen">
+  <h1>🔒 まりも ツール</h1>
+  <input type="password" id="password-input" placeholder="パスワードを入力" />
+  <button onclick="unlock()">ログイン</button>
+  <div id="lock-error"></div>
+</div>
+
+<!-- メイン -->
+<div id="app">
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchNav('post')">✍️ ポスト作成</div>
+    <div class="nav-tab" onclick="switchNav('comment')">💬 コメント</div>
+    <div class="nav-tab" onclick="switchNav('reply')">↩️ 返信</div>
+    <div class="nav-tab" onclick="switchNav('quote')">🔁 引用リプ</div>
+    <div class="nav-tab" onclick="switchNav('viral')">🔥 バズ投稿</div>
+    <div class="nav-tab" onclick="switchNav('approve')">✅ 承認</div>
+  </div>
+
+  <!-- ポスト作成 -->
+  <div id="tab-post">
+    <h2>✍️ ポスト作成</h2>
+    <div class="section">
+      <label>テーマ（任意）</label>
+      <select id="theme">
+        <option value="">ミックス（全タイプ）</option>
+        <option value="A">A｜一言刺さり系（30〜50字）</option>
+        <option value="B">B｜逆張り・常識否定系（80〜120字）</option>
+        <option value="C">C｜共感爆発→本音系（100〜150字）</option>
+        <option value="D">D｜コメント誘発・問いかけ系（80〜120字）</option>
+        <option value="E">E｜プロフィール自然誘導（100〜150字）</option>
+      </select>
+    </div>
+    <div class="kw-section">
+      <div class="kw-header">
+        <label>キーワード一覧（タップで追加）</label>
+        <span onclick="resetKeywords()">リセット</span>
+      </div>
+      <div class="kw-tags" id="kw-tags"></div>
+      <div class="kw-add-row">
+        <input class="kw-add-input" id="kw-input" placeholder="キーワードを手動追加..." />
+        <button class="kw-add-btn" onclick="addKeyword()">追加</button>
+      </div>
+    </div>
+    <div class="section">
+      <label>メモ・キーワード（タップで選択 or 手動入力）</label>
+      <textarea id="memo" placeholder="例：子供の習い事、月5万、コピペ..." rows="3"></textarea>
+    </div>
+    <button class="btn-primary" id="btn-generate" onclick="generate()">AIでポストを生成</button>
+    <div id="post-list"></div>
+    <button class="btn-sub" onclick="generate()" style="margin-top:8px;">もう一度生成</button>
+    <div id="post-status"></div>
+    <div class="settings-toggle" onclick="toggleSettings()">⚙️ API設定</div>
+    <div id="settings-panel">
+      <label>Anthropic API Key</label>
+      <input type="password" id="api-key-input" placeholder="sk-ant-..." />
+      <button class="btn-save-key" onclick="saveApiKey()">保存</button>
+    </div>
+  </div>
+
+  <!-- コメント作成 -->
+  <div id="tab-comment" style="display:none;">
+    <h2>💬 コメント作成</h2>
+    <div class="section">
+      <label>コメントしたい投稿を貼り付け</label>
+      <textarea id="target-post" placeholder="相手の投稿文をここに貼り付けてください..." rows="5"></textarea>
+    </div>
+    <button class="btn-primary" id="btn-comment" onclick="generateComments()">コメントを生成</button>
+    <div id="comment-status"></div>
+    <div id="comment-results"></div>
+  </div>
+
+  <!-- 返信作成 -->
+  <div id="tab-reply" style="display:none;">
+    <h2>↩️ 返信作成</h2>
+    <div class="section">
+      <label>元のポスト</label>
+      <textarea id="original-post" placeholder="自分の投稿文をここに貼り付けてください..." rows="4"></textarea>
+    </div>
+    <div class="section">
+      <label>届いたコメント</label>
+      <textarea id="received-comment" placeholder="返信したいコメントをここに貼り付けてください..." rows="3"></textarea>
+    </div>
+    <button class="btn-primary" id="btn-reply" onclick="generateReplies()">返信を生成</button>
+    <div id="reply-status"></div>
+    <div id="reply-results"></div>
+  </div>
+
+  <!-- 引用リプ作成 -->
+  <div id="tab-quote" style="display:none;">
+    <h2>🔁 引用リプ作成</h2>
+    <div class="section">
+      <label>引用したい相手のポスト</label>
+      <textarea id="quote-post" placeholder="引用したいポストをここに貼り付けてください..." rows="5"></textarea>
+    </div>
+    <button class="btn-primary" id="btn-quote" onclick="generateQuotes()">引用リプを生成</button>
+    <div id="quote-status"></div>
+    <div id="quote-results"></div>
+  </div>
+
+  <!-- バズ投稿 -->
+  <div id="tab-viral" style="display:none;">
+    <h2>🔥 バズ投稿 登録</h2>
+    <div style="background:#1a1a1a;border:1px solid #1d9bf033;border-radius:12px;padding:12px;margin-bottom:16px;font-size:12px;color:#888;line-height:1.6;">
+      ⚠️ 他者の投稿を貼り付けてください。<br>
+      Claudeが<strong style="color:#1d9bf0">パターンのみ</strong>を分析・学習します。<br>
+      文章のコピーは一切行わず、まりもの言葉で独自に生成します。
+    </div>
+    <div class="section">
+      <label>バズっている投稿を貼り付け</label>
+      <textarea id="viral-input" placeholder="バズっている投稿をここに貼り付けてください..." rows="6"></textarea>
+    </div>
+    <button class="btn-primary" id="btn-viral" onclick="analyzeViral()">分析して登録</button>
+    <div id="viral-status" style="text-align:center;font-size:0.85rem;color:#71767b;margin:8px 0;min-height:20px;"></div>
+    <div id="viral-analysis-result"></div>
+    <div style="margin-top:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="font-size:13px;font-weight:600;color:#888;">登録済みパターン</span>
+        <span id="viral-count" style="font-size:12px;color:#555;"></span>
+      </div>
+      <div id="viral-list"></div>
+    </div>
+  </div>
+
+  <!-- 投稿承認 -->
+  <div id="tab-approve">
+    <div class="approve-header">
+      <h2>✅ 投稿承認</h2>
+      <div class="stats-text" id="stats-bar">-</div>
+    </div>
+
+    <div class="gh-token-area" id="gh-token-area">
+      <label style="font-size:12px;color:#555;">GitHub Token（初回のみ）</label>
+      <input type="password" id="gh-token-input" placeholder="ghp_..." />
+      <button onclick="saveGhToken()">保存して読み込む</button>
+    </div>
+
+    <div class="sub-tabs">
+      <div class="sub-tab active" onclick="switchSubTab('pending')">未承認</div>
+      <div class="sub-tab" onclick="switchSubTab('approved')">承認済</div>
+      <div class="sub-tab" onclick="switchSubTab('posted')">投稿済</div>
+    </div>
+
+    <div id="draft-list"><div class="loading-msg">GitHubトークンを入力してください</div></div>
+    <div class="pb80"></div>
+  </div>
+</div>
+
+<div class="save-bar" id="save-bar">
+  <span id="save-bar-text">変更あり</span>
+  <button class="btn-save-all" onclick="saveAll()">保存して確定</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PASSWORD = "haruku1225";
+const OWNER = "12256384a-bot";
+const REPO = "threads-auto-post";
+const FILE_PATH = "drafts.json";
+
+// ---- キーワード一覧 ----
+const DEFAULT_KEYWORDS = [
+  // 体験・ストーリー系
+  "3年間0円だった","副業で0円","最初の1円","初月5万","月5〜10万安定",
+  "22時帰宅","満員電車","住宅ローン","子供の習い事","妻に話したら",
+  "家計簿を消した","ボーナスが消えた","節約疲れた","外食できない","安いものばかり選ぶ",
+  // AI・副業スキル系
+  "AIとコピペ","ChatGPT","仕組み化","自動化","コピペで回す",
+  "29分だけ","朝5時台","スキマ時間","知識ゼロ","実績ゼロ",
+  "テンプレ作成","デジタルコンテンツ","note販売","SNS発信","ファン化",
+  // 感情・葛藤系
+  "正直ビビった","なんかモヤった","テンション上がった","追い詰められた","焦った",
+  "情けなかった","恥ずかしかった","泣きそうになった","やめようと思った","続かなかった",
+  // 逆張り・気づき系
+  "頑張らない方が稼げた","努力の方向が違った","設計の問題","仕組みの問題","ノウハウより先に",
+  "シンプルが正解","複雑にしてたのは自分","コツコツする場所が違う","時間を売らない","仕組みにコツコツ",
+  // 検索ワード系
+  "副業 バレない","副業 確定申告","副業 在宅","副業 時間がない","副業 続かない",
+  "AI副業","副業 初心者","副業 会社員","副業 スマホだけ","副業 月5万",
+  // 比較・選択系
+  "給料より早い","昇給を待つより","残業するより","転職より","節約より稼ぐ",
+  "時給300円","低単価","高単価","仕組みで回す","体力で殴らない",
+  // 家族・日常系
+  "妻が笑顔になった","子供に買ってあげた","ローンが怖くなくなった","会社だけに依存しない","精神的に楽になった",
+  "帰宅後パソコン開かない","寝る前の30分","電車の中で","子どもが寝た後","休日に稼ぐ",
+  // 行動喚起系
+  "動いた人だけ","後回しにすると","チャンスは今","変わったきっかけ","やり方を変えた",
+  "結局やるかやらないか","0円から1円が一番難しい","まず1件","続けると変わる","仕組みを1個だけ",
+  // プロフィール誘導系
+  "プロフィールに書いてます","気になる人はプロフィール","詳しくはプロフィール","無料で公開中","リンクに置いてます"
+];
+
+let keywords = JSON.parse(localStorage.getItem('kw_list') || 'null') || [...DEFAULT_KEYWORDS];
+
+function saveKeywordsToStorage() {
+  localStorage.setItem('kw_list', JSON.stringify(keywords));
+}
+
+function renderKeywords() {
+  const container = document.getElementById('kw-tags');
+  container.innerHTML = keywords.map((kw, i) => `
+    <div class="kw-tag" onclick="selectKeyword('${kw.replace(/'/g,"\\'")}')">
+      <span>${kw}</span>
+      <span class="kw-del" onclick="event.stopPropagation();deleteKeyword(${i})">✕</span>
+    </div>
+  `).join('');
+}
+
+function selectKeyword(kw) {
+  const memo = document.getElementById('memo');
+  const current = memo.value.trim();
+  memo.value = current ? current + '、' + kw : kw;
+}
+
+function addKeyword() {
+  const input = document.getElementById('kw-input');
+  const val = input.value.trim();
+  if (!val) return;
+  if (!keywords.includes(val)) {
+    keywords.push(val);
+    saveKeywordsToStorage();
+    renderKeywords();
+  }
+  input.value = '';
+  showToast('追加しました');
+}
+
+function deleteKeyword(i) {
+  keywords.splice(i, 1);
+  saveKeywordsToStorage();
+  renderKeywords();
+}
+
+function resetKeywords() {
+  if (!confirm('キーワードをデフォルトに戻しますか？')) return;
+  keywords = [...DEFAULT_KEYWORDS];
+  saveKeywordsToStorage();
+  renderKeywords();
+  showToast('リセットしました');
+}
+
+document.getElementById('kw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); addKeyword(); }
+});
+
+const GEMINI_API_KEY = "AIzaSyDCXyDPVj2s1q1-PudtEQGIrJafctsAMzk";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent";
+
+const SYSTEM_PROMPT = `あなたは35歳の会社員（営業職）。妻と子供2人、住宅ローンあり。
+3年間副業0円だったが、AIとコピペで仕組みを作ってから月5万〜10万の収益が安定してきた。
+その人物「まりも」として、Threadsでバズる投稿を書いてください。
+
+【禁止事項】
+- 一人称は「俺」のみ（「私」「僕」禁止）
+- 「〜ですよね。わかります。でも〜」の説明調パターン禁止
+- 「副業あるある」などの紋切り型禁止
+- ハッシュタグなし
+- 「誰でも稼げる」「絶対に」など断言禁止
+- 「DMください」「LINE登録で〜」など誘導禁止
+- 月100万など誇大な数字禁止
+
+【投稿タイプ別ルール】
+A｜一言刺さり系（30〜50字）
+  結論だけ言い切る。説明しない。逆説・数字インパクト・言えなかった本音。
+
+B｜逆張り・常識否定系（80〜120字）
+  「みんながやってる〇〇は実は間違い」の構造。強い主張→理由1行→体験で締める。
+
+C｜共感爆発→本音系（100〜150字）
+  読者が「これ俺じゃん」と思う状況から入り、意外な角度の本音を言う。
+  Googleサジェストのワード（「副業 バレない」等）を冒頭に自然に入れる。
+
+D｜コメント誘発・問いかけ系（80〜120字）
+  体験や気づきを話し、最後に「これって俺だけ？」「みんなはどうやって乗り越えた？」で締める。
+
+E｜プロフィール自然誘導（100〜150字）
+  体験談を語り、最後の1文だけ「気になる人はプロフィールに書いてます」などで締める。宣伝感ゼロ。
+
+【冒頭フック（毎投稿で使う・毎回変える）】
+- 数字から始める：「3年間」「月5万」「22時帰宅」
+- 逆説：「頑張らない方が稼げた」「知識ゼロの方が有利だった」
+- 検索ワードそのまま：「『副業 バレない』で調べてた時期がある」
+- 情景：「昨日の帰り道」「子どもが寝た後」「満員電車の中で」
+- 暴露：「正直に言う」「ぶっちゃけ言うと」
+
+【文体】
+- 語尾は「〜かも」「知らんけど」「〜だった気がする」でもOK
+- 感情：「正直ビビった」「なんかモヤった」「テンション上がった」を自然に入れる
+- 句読点を整えすぎない。「、、、」「…」もOK
+- きれいにまとめない。余韻を残していい
+
+【出力】
+投稿文のみを「---」で区切って出力。番号・タイプ名・文字数・説明は一切付けない。`;
+
+// ---- 認証 ----
+function unlock() {
+  if (document.getElementById('password-input').value === PASSWORD) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    const saved = localStorage.getItem('anthropic_api_key');
+    if (saved) document.getElementById('api-key-input').value = saved;
+    const ghToken = localStorage.getItem('gh_token');
+    if (ghToken) {
+      document.getElementById('gh-token-input').value = ghToken;
+      document.getElementById('gh-token-area').style.display = 'none';
+    }
+  } else {
+    document.getElementById('lock-error').textContent = 'パスワードが違います';
+  }
+}
+document.getElementById('password-input').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+renderKeywords();
+
+// ---- タブ切替 ----
+function switchNav(tab) {
+  document.querySelectorAll('.nav-tab').forEach((t, i) => t.classList.toggle('active', ['post','comment','reply','quote','viral','approve'][i] === tab));
+  ['post','comment','reply','quote','viral','approve'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'approve' && localStorage.getItem('gh_token') && drafts.length === 0) loadDrafts();
+  if (tab === 'viral' && localStorage.getItem('gh_token')) loadViral();
+}
+
+// ---- ポスト作成 ----
+function renderPosts(posts) {
+  const list = document.getElementById('post-list');
+  if (!posts.length) { list.innerHTML = ''; return; }
+  list.innerHTML = posts.map((p, i) => {
+    const over = p.length > 140;
+    return `
+      <div class="post-card" id="pcard-${i}">
+        <div class="post-card-text" id="ptext-${i}">${esc(p)}</div>
+        <textarea class="draft-edit" id="pedit-${i}" style="display:none">${esc(p)}</textarea>
+        <div class="post-card-footer">
+          <span class="post-card-len ${over ? 'over' : 'ok'}" id="plen-${i}">${p.length} / 140${over ? ' ⚠️' : ''}</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-copy-post" id="pebtn-${i}" onclick="togglePostEdit(${i})">編集</button>
+            <button class="btn-copy-post" onclick="copyPost(${i})">コピー</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function togglePostEdit(i) {
+  const textEl = document.getElementById(`ptext-${i}`);
+  const editEl = document.getElementById(`pedit-${i}`);
+  const btnEl = document.getElementById(`pebtn-${i}`);
+  const lenEl = document.getElementById(`plen-${i}`);
+  const isEditing = editEl.style.display === 'block';
+  if (isEditing) {
+    const newText = editEl.value.trim();
+    _posts[i] = newText;
+    textEl.innerHTML = esc(newText);
+    const over = newText.length > 140;
+    lenEl.textContent = `${newText.length} / 140${over ? ' ⚠️' : ''}`;
+    lenEl.className = `post-card-len ${over ? 'over' : 'ok'}`;
+    editEl.style.display = 'none';
+    textEl.style.display = 'block';
+    btnEl.textContent = '編集';
+  } else {
+    editEl.style.display = 'block';
+    textEl.style.display = 'none';
+    btnEl.textContent = '保存';
+    editEl.oninput = () => {
+      const len = editEl.value.length;
+      const over = len > 140;
+      lenEl.textContent = `${len} / 140${over ? ' ⚠️' : ''}`;
+      lenEl.className = `post-card-len ${over ? 'over' : 'ok'}`;
+    };
+  }
+}
+
+let _posts = [];
+function copyPost(i) {
+  navigator.clipboard.writeText(_posts[i]).then(() => showToast('コピーしました！'));
+}
+
+function getApiKey() { return localStorage.getItem('anthropic_api_key') || ''; }
+function saveApiKey() {
+  localStorage.setItem('anthropic_api_key', document.getElementById('api-key-input').value.trim());
+  setPostStatus('APIキーを保存しました', 'success');
+}
+function toggleSettings() {
+  const p = document.getElementById('settings-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+function setPostStatus(msg, type = '') {
+  const el = document.getElementById('post-status');
+  el.innerHTML = msg; el.className = type;
+}
+async function generate() {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    setPostStatus('⚙️ API設定からAPIキーを入力してください', 'error');
+    document.getElementById('settings-panel').style.display = 'block';
+    return;
+  }
+  const theme = document.getElementById('theme').value;
+  const memo = document.getElementById('memo').value.trim();
+  const btn = document.getElementById('btn-generate');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>生成中...';
+  setPostStatus('');
+  document.getElementById('post-list').innerHTML = '';
+
+  const typeGuide = {
+    'A': 'タイプA（一言刺さり系）のみ10件。30〜50字。結論だけ言い切る。',
+    'B': 'タイプB（逆張り・常識否定系）のみ10件。80〜120字。「みんながやってる〇〇は間違い」構造。',
+    'C': 'タイプC（共感爆発→本音系）のみ10件。100〜150字。「これ俺じゃん」から意外な本音。',
+    'D': 'タイプD（コメント誘発・問いかけ系）のみ10件。80〜120字。最後に自然な問いかけで締める。',
+    'E': 'タイプE（プロフィール自然誘導）のみ10件。100〜150字。最後の1文でプロフィールへ誘導。',
+  };
+  let userPrompt = theme
+    ? `${typeGuide[theme]}各投稿を「---」で区切って出力してください。`
+    : 'A〜Eのタイプをミックスして10件生成してください。各投稿を「---」で区切って出力してください。';
+  if (memo) userPrompt += `\n参考にするキーワード・ネタ: ${memo}`;
+
+  try {
+    const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey: getApiKey(), dangerouslyAllowBrowser: true });
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6', max_tokens: 2048,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userPrompt }]
+    });
+    const raw = message.content[0].text.trim();
+    _posts = raw.split('---').map(p => p.trim()).filter(Boolean);
+    renderPosts(_posts);
+    setPostStatus(`${_posts.length}件生成完了！`, 'success');
+  } catch (e) {
+    setPostStatus(`エラー: ${e.message}`, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'AIでポストを生成';
+  }
+}
+
+// ---- コメント作成 ----
+async function generateComments() {
+  const targetPost = document.getElementById('target-post').value.trim();
+  if (!targetPost) {
+    document.getElementById('comment-status').textContent = '投稿文を入力してください';
+    document.getElementById('comment-status').className = 'error';
+    return;
+  }
+  const btn = document.getElementById('btn-comment');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>生成中...';
+  document.getElementById('comment-status').textContent = '';
+  document.getElementById('comment-results').innerHTML = '';
+
+  const prompt = `以下のXの投稿に対するコメントを10件生成してください。
+
+【対象投稿】
+${targetPost}
+
+【コメント作成のルール】
+- 一人称は「僕」または「自分」で統一（「俺」は使わない）
+- 営業の話は一切入れない
+- 相手の投稿内容に具体的に触れる（「いいですね」だけはNG・「勉強になります」などの定型文もNG）
+- 自分の体験・意見を一言添える
+- 1〜2文で簡潔に。40〜80文字が理想
+- 攻撃的・皮肉・ネガティブな表現は禁止
+- 相手への敬意を忘れない自然で感じの良いトーン
+
+【ユーモアありの条件】
+- 軽くクスッとする程度のユーモア（やりすぎない）
+- 自然で違和感のない日本語
+
+【ユーモアなしの条件】
+- 自然で感じの良いコメント
+- 共感・ポジティブさを含める
+
+【出力形式】
+以下の形式で出力してください：
+
+HUMOR
+（ユーモアあり5件を「---」で区切る）
+
+SERIOUS
+（ユーモアなし5件を「---」で区切る）`;
+
+  try {
+    const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey: getApiKey(), dangerouslyAllowBrowser: true });
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6', max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const raw = message.content[0].text.trim();
+    const humorMatch = raw.match(/HUMOR\s*([\s\S]*?)(?=SERIOUS|$)/);
+    const seriousMatch = raw.match(/SERIOUS\s*([\s\S]*?)$/);
+
+    const humorItems = humorMatch ? humorMatch[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+    const seriousItems = seriousMatch ? seriousMatch[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+
+    let html = '';
+    if (humorItems.length) {
+      html += '<div class="comment-section-title">😄 ユーモアあり</div>';
+      html += humorItems.map((c, i) => commentCard(c, 'humor', i)).join('');
+    }
+    if (seriousItems.length) {
+      html += '<div class="comment-section-title">💬 ユーモアなし</div>';
+      html += seriousItems.map((c, i) => commentCard(c, 'serious', i + 10)).join('');
+    }
+    document.getElementById('comment-results').innerHTML = html;
+    document.getElementById('comment-status').textContent = '生成完了！';
+    document.getElementById('comment-status').className = 'success';
+  } catch (e) {
+    document.getElementById('comment-status').textContent = `エラー: ${e.message}`;
+    document.getElementById('comment-status').className = 'error';
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'コメントを生成';
+  }
+}
+
+function commentCard(text, type, idx) {
+  return editableCommentCard(text, type, idx);
+}
+
+function editableCommentCard(text, type, idx) {
+  return `
+    <div class="comment-card ${type}">
+      <div class="comment-text" id="ctext-${idx}">${esc(text)}</div>
+      <textarea class="draft-edit" id="cedit-${idx}" style="display:none">${esc(text)}</textarea>
+      <div class="comment-footer">
+        <span class="comment-len" id="clen-${idx}">${text.length}文字</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-copy-comment" id="cebtn-${idx}" onclick="toggleCommentEdit('${idx}')">編集</button>
+          <button class="btn-copy-comment" onclick="copyComment('${idx}')">コピー</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleCommentEdit(idx) {
+  const textEl = document.getElementById(`ctext-${idx}`);
+  const editEl = document.getElementById(`cedit-${idx}`);
+  const btnEl = document.getElementById(`cebtn-${idx}`);
+  const lenEl = document.getElementById(`clen-${idx}`);
+  const isEditing = editEl.style.display === 'block';
+  if (isEditing) {
+    const newText = editEl.value.trim();
+    textEl.innerHTML = esc(newText);
+    lenEl.textContent = `${newText.length}文字`;
+    editEl.style.display = 'none';
+    textEl.style.display = 'block';
+    btnEl.textContent = '編集';
+  } else {
+    editEl.style.display = 'block';
+    textEl.style.display = 'none';
+    btnEl.textContent = '保存';
+    editEl.oninput = () => { lenEl.textContent = `${editEl.value.length}文字`; };
+  }
+}
+
+function copyComment(idx) {
+  const editEl = document.getElementById(`cedit-${idx}`);
+  const textEl = document.getElementById(`ctext-${idx}`);
+  const text = editEl.style.display === 'block' ? editEl.value.trim() : textEl.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => showToast('コピーしました！'));
+}
+
+// ---- 返信作成 ----
+async function generateReplies() {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    document.getElementById('reply-status').textContent = '⚙️ API設定からAPIキーを入力してください';
+    document.getElementById('reply-status').className = 'error';
+    return;
+  }
+  const originalPost = document.getElementById('original-post').value.trim();
+  const receivedComment = document.getElementById('received-comment').value.trim();
+  if (!receivedComment) {
+    document.getElementById('reply-status').textContent = 'コメントを入力してください';
+    document.getElementById('reply-status').className = 'error';
+    return;
+  }
+  const btn = document.getElementById('btn-reply');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>生成中...';
+  document.getElementById('reply-status').textContent = '';
+  document.getElementById('reply-results').innerHTML = '';
+
+  const prompt = `届いたコメントへの返信を10件生成してください。
+
+【元のポスト】
+${originalPost || '（なし）'}
+
+【届いたコメント】
+${receivedComment}
+
+【返信のルール】
+- 一人称は「僕」または「自分」で統一（「俺」は使わない）
+- 営業の話は一切入れない
+- コメントの内容にしっかり触れる
+- 元ポストの内容も自然に踏まえる
+- 感謝・共感・ポジティブさを含める
+- 1〜2文で簡潔に。30〜60文字が理想
+- 攻撃的・皮肉・ネガティブ表現は禁止
+- カジュアルで自然な日本語
+- 同じような返信にならないようバリエーションを出す
+
+【ユーモアありの条件】
+- 軽くクスッとする程度（やりすぎない）
+
+【出力形式】
+以下の形式で出力してください：
+
+HUMOR
+（ユーモアあり5件を「---」で区切る）
+
+SERIOUS
+（ユーモアなし5件を「---」で区切る）`;
+
+  try {
+    const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6', max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const raw = message.content[0].text.trim();
+    const humorMatch = raw.match(/HUMOR\s*([\s\S]*?)(?=SERIOUS|$)/);
+    const seriousMatch = raw.match(/SERIOUS\s*([\s\S]*?)$/);
+    const humorItems = humorMatch ? humorMatch[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+    const seriousItems = seriousMatch ? seriousMatch[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+
+    let html = '';
+    if (humorItems.length) {
+      html += '<div class="comment-section-title">😄 ユーモアあり</div>';
+      html += humorItems.map((c, i) => editableCommentCard(c, 'humor', 'r' + i)).join('');
+    }
+    if (seriousItems.length) {
+      html += '<div class="comment-section-title">💬 ユーモアなし</div>';
+      html += seriousItems.map((c, i) => editableCommentCard(c, 'serious', 'r' + (i + 10))).join('');
+    }
+    document.getElementById('reply-results').innerHTML = html;
+    document.getElementById('reply-status').textContent = '生成完了！';
+    document.getElementById('reply-status').className = 'success';
+  } catch (e) {
+    document.getElementById('reply-status').textContent = `エラー: ${e.message}`;
+    document.getElementById('reply-status').className = 'error';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '返信を生成';
+  }
+}
+
+// ---- 引用リプ作成 ----
+async function generateQuotes() {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    document.getElementById('quote-status').textContent = '⚙️ API設定からAPIキーを入力してください';
+    document.getElementById('quote-status').className = 'error';
+    return;
+  }
+  const quotePost = document.getElementById('quote-post').value.trim();
+  if (!quotePost) {
+    document.getElementById('quote-status').textContent = '引用するポストを入力してください';
+    document.getElementById('quote-status').className = 'error';
+    return;
+  }
+  const btn = document.getElementById('btn-quote');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>生成中...';
+  document.getElementById('quote-status').textContent = '';
+  document.getElementById('quote-results').innerHTML = '';
+
+  const prompt = `以下のポストへの引用リポスト文を9件生成してください。
+
+【引用するポスト】
+${quotePost}
+
+【引用リポストで重要なこと】
+- 一人称は「僕」または「自分」で統一（「俺」は使わない）
+- 営業の話は一切入れない
+- 相手のポストを引用して自分の意見・体験・価値観を加える
+- 「勉強になります」「フォローしました」などの定型文はNG
+- 「共感します」「実践します」だけの具体性のない感想もNG
+- 相手の主張を否定せず、自分の視点でさらに深掘りする
+- 元の投稿者への敬意を忘れない
+- 100〜130文字程度
+- ハッシュタグは入れない
+- 押し付けがましくなく、フォロワーが見ても「有益」または「心が動く」内容にする
+
+【以下の3パターンを3件ずつ作成】
+パターン1【経験・具体化型】：自分の失敗談や経験を交え「〇〇な人ほどやりがち」と具体化する。または「3日前の自分に刺さる」など過去や未来の自分と対比させる。
+パターン2【深掘り・別視点型】：投稿の価値をさらに引き出す深掘りをする。または投稿者の言語化を称賛しつつ「自分は△△と表現していた」と別角度の視点を添える。
+パターン3【価値言語化・エモ型】：「この一文で救われる人が多いと思う」と意義を言語化する。または実際にやってみた結果や具体的な宣言をストーリー仕立てにする。
+
+【出力形式】
+以下の形式で出力してください：
+
+PATTERN1
+（パターン1を3件「---」で区切る）
+
+PATTERN2
+（パターン2を3件「---」で区切る）
+
+PATTERN3
+（パターン3を3件「---」で区切る）`;
+
+  try {
+    const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6', max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const raw = message.content[0].text.trim();
+    const p1Match = raw.match(/PATTERN1\s*([\s\S]*?)(?=PATTERN2|$)/);
+    const p2Match = raw.match(/PATTERN2\s*([\s\S]*?)(?=PATTERN3|$)/);
+    const p3Match = raw.match(/PATTERN3\s*([\s\S]*?)$/);
+    const p1 = p1Match ? p1Match[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+    const p2 = p2Match ? p2Match[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+    const p3 = p3Match ? p3Match[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+
+    let html = '';
+    if (p1.length) { html += '<div class="comment-section-title">📖 経験・具体化型</div>' + p1.map((c,i) => editableCommentCard(c,'serious','q1'+i)).join(''); }
+    if (p2.length) { html += '<div class="comment-section-title">🔍 深掘り・別視点型</div>' + p2.map((c,i) => editableCommentCard(c,'humor','q2'+i)).join(''); }
+    if (p3.length) { html += '<div class="comment-section-title">💡 価値言語化・エモ型</div>' + p3.map((c,i) => editableCommentCard(c,'serious','q3'+i)).join(''); }
+
+    const total = p1.length + p2.length + p3.length;
+    document.getElementById('quote-results').innerHTML = html;
+    document.getElementById('quote-status').textContent = `${total}件生成完了！`;
+    document.getElementById('quote-status').className = 'success';
+  } catch (e) {
+    document.getElementById('quote-status').textContent = `エラー: ${e.message}`;
+    document.getElementById('quote-status').className = 'error';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '引用リプを生成';
+  }
+}
+
+// ---- バズ投稿 ----
+const VIRAL_FILE_PATH = 'viral_examples.json';
+let viralExamples = [], viralSha = '';
+
+async function loadViral() {
+  const token = localStorage.getItem('gh_token');
+  if (!token) return;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${VIRAL_FILE_PATH}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' }
+    });
+    const data = await res.json();
+    viralSha = data.sha;
+    const decoded = new TextDecoder('utf-8').decode(Uint8Array.from(atob(data.content.replace(/\n/g,'')), c=>c.charCodeAt(0)));
+    viralExamples = JSON.parse(decoded);
+    renderViral();
+  } catch(e) { console.error('viral load error', e); }
+}
+
+async function saveViral() {
+  const token = localStorage.getItem('gh_token');
+  if (!token) return;
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(viralExamples, null, 2))));
+  const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${VIRAL_FILE_PATH}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: 'chore: バズ投稿パターン更新', content, sha: viralSha })
+  });
+  if (res.ok) { const data = await res.json(); viralSha = data.content.sha; }
+}
+
+async function analyzeViral() {
+  const text = document.getElementById('viral-input').value.trim();
+  if (!text) { setViralStatus('投稿を入力してください', 'error'); return; }
+  const apiKey = getApiKey();
+  if (!apiKey) { setViralStatus('⚙️ API設定からAPIキーを入力してください', 'error'); return; }
+
+  const btn = document.getElementById('btn-viral');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>分析中...';
+  setViralStatus('');
+  document.getElementById('viral-analysis-result').innerHTML = '';
+
+  try {
+    const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6', max_tokens: 400,
+      messages: [{ role: 'user', content:
+        `以下のThreads投稿のバズパターンを分析してJSON形式のみで返してください。\n\n投稿:\n${text}\n\n` +
+        `分析項目:\n` +
+        `- hook_type: 冒頭フックの種類（逆説/数字/共感/問いかけ/暴露/情景/検索ワード のいずれか）\n` +
+        `- emotion: 感情トリガー（共感/驚き/不安/希望/笑い/怒り のいずれか）\n` +
+        `- structure: 投稿の構造を1行で（例: 冒頭で問題提起→体験談→余韻で締め）\n` +
+        `- key_elements: バズる要因を2〜3個（文字列の配列）\n` +
+        `- char_count: 文字数（整数）\n\nJSON以外は絶対に出力しないこと。`
+      }]
+    });
+    let analysis;
+    try { analysis = JSON.parse(message.content[0].text.trim()); }
+    catch(e) { analysis = { hook_type:'不明', emotion:'不明', structure:'分析エラー', key_elements:[], char_count: text.length }; }
+
+    const newEntry = {
+      id: viralExamples.length ? viralExamples[viralExamples.length-1].id + 1 : 1,
+      text, analysis, added_at: new Date().toISOString()
+    };
+    viralExamples.push(newEntry);
+    await saveViral();
+    renderViral();
+    document.getElementById('viral-input').value = '';
+
+    const tags = [
+      `<span style="background:#1d9bf022;color:#1d9bf0;padding:3px 8px;border-radius:6px;font-size:12px;">🪝 ${analysis.hook_type}</span>`,
+      `<span style="background:#9333ea22;color:#9333ea;padding:3px 8px;border-radius:6px;font-size:12px;">💬 ${analysis.emotion}</span>`,
+      `<span style="background:#00c85322;color:#00c853;padding:3px 8px;border-radius:6px;font-size:12px;">📏 ${analysis.char_count}字</span>`,
+      ...(analysis.key_elements||[]).map(e=>`<span style="background:#f59e0b22;color:#f59e0b;padding:3px 8px;border-radius:6px;font-size:12px;">✨ ${e}</span>`)
+    ].join(' ');
+    document.getElementById('viral-analysis-result').innerHTML = `
+      <div style="background:#1a1a1a;border:1px solid #00c853;border-radius:12px;padding:12px;margin-bottom:12px;">
+        <div style="font-size:12px;color:#00c853;margin-bottom:8px;">✅ 登録完了・パターン分析結果</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">${tags}</div>
+        <div style="font-size:12px;color:#666;">構造: ${analysis.structure}</div>
+      </div>`;
+    setViralStatus('登録完了！次回の自動生成に反映されます', 'success');
+  } catch(e) {
+    setViralStatus(`エラー: ${e.message}`, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '分析して登録';
+  }
+}
+
+function renderViral() {
+  document.getElementById('viral-count').textContent = `${viralExamples.length}件登録済み`;
+  const list = document.getElementById('viral-list');
+  if (!viralExamples.length) { list.innerHTML = '<div style="text-align:center;padding:24px;color:#444;font-size:14px;">まだ登録されていません</div>'; return; }
+  list.innerHTML = [...viralExamples].reverse().map(v => {
+    const a = v.analysis || {};
+    const tags = [
+      a.hook_type && `<span style="background:#1d9bf022;color:#1d9bf0;padding:2px 6px;border-radius:5px;font-size:11px;">🪝 ${a.hook_type}</span>`,
+      a.emotion && `<span style="background:#9333ea22;color:#9333ea;padding:2px 6px;border-radius:5px;font-size:11px;">💬 ${a.emotion}</span>`,
+      a.char_count && `<span style="background:#333;color:#888;padding:2px 6px;border-radius:5px;font-size:11px;">📏 ${a.char_count}字</span>`,
+      ...(a.key_elements||[]).map(e=>`<span style="background:#f59e0b22;color:#f59e0b;padding:2px 6px;border-radius:5px;font-size:11px;">✨ ${e}</span>`)
+    ].filter(Boolean).join(' ');
+    return `
+      <div style="background:#1a1a1a;border:1px solid #222;border-radius:12px;padding:12px;margin-bottom:8px;">
+        <div style="font-size:13px;color:#555;line-height:1.5;border-left:3px solid #333;padding-left:8px;margin-bottom:8px;white-space:pre-wrap;word-break:break-all;">${esc(v.text.slice(0,80))}${v.text.length>80?'…':''}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">${tags}</div>
+        ${a.structure ? `<div style="font-size:11px;color:#555;">構造: ${a.structure}</div>` : ''}
+        <div style="text-align:right;margin-top:6px;">
+          <button onclick="deleteViral(${v.id})" style="padding:3px 10px;border-radius:8px;border:1px solid #ff444433;background:transparent;color:#ff6666;font-size:11px;cursor:pointer;">削除</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function deleteViral(id) {
+  if (!confirm('このパターンを削除しますか？')) return;
+  viralExamples = viralExamples.filter(v => v.id !== id);
+  await saveViral();
+  renderViral();
+  showToast('削除しました');
+}
+
+function setViralStatus(msg, type='') {
+  const el = document.getElementById('viral-status');
+  el.textContent = msg;
+  el.style.color = type === 'error' ? '#f4212e' : type === 'success' ? '#00ba7c' : '#71767b';
+}
+
+// ---- 投稿承認 ----
+let drafts = [], sha = '', currentSubTab = 'pending', hasChanges = false;
+
+function saveGhToken() {
+  const token = document.getElementById('gh-token-input').value.trim();
+  if (!token) return;
+  localStorage.setItem('gh_token', token);
+  document.getElementById('gh-token-area').style.display = 'none';
+  loadDrafts();
+}
+
+async function loadDrafts() {
+  document.getElementById('draft-list').innerHTML = '<div class="loading-msg">読み込み中...</div>';
+  const token = localStorage.getItem('gh_token');
+  if (!token) return;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE_PATH}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' }
+    });
+    const data = await res.json();
+    sha = data.sha;
+    const decoded = new TextDecoder('utf-8').decode(Uint8Array.from(atob(data.content.replace(/\n/g, '')), c => c.charCodeAt(0)));
+    drafts = JSON.parse(decoded);
+    renderDrafts(); updateStats();
+  } catch (e) {
+    document.getElementById('draft-list').innerHTML = '<div class="loading-msg">読み込みに失敗しました</div>';
+  }
+}
+
+function updateStats() {
+  const p = drafts.filter(d => d.status === 'pending').length;
+  const a = drafts.filter(d => d.status === 'approved').length;
+  const posted = drafts.filter(d => d.status === 'posted').length;
+  document.getElementById('stats-bar').textContent = `未承認${p} / 承認済${a} / 投稿済${posted}`;
+}
+
+function switchSubTab(tab) {
+  currentSubTab = tab;
+  document.querySelectorAll('.sub-tab').forEach((t, i) => t.classList.toggle('active', ['pending','approved','posted'][i] === tab));
+  renderDrafts();
+}
+
+function renderDrafts() {
+  const list = document.getElementById('draft-list');
+  const filtered = drafts.filter(d => d.status === currentSubTab).slice().reverse();
+  if (filtered.length === 0) { list.innerHTML = '<div class="empty-msg">該当する投稿はありません</div>'; return; }
+  list.innerHTML = filtered.map(d => `
+    <div class="draft-card ${d.status}" id="card-${d.id}">
+      <div class="draft-meta">
+        <span>#${d.id} <span class="badge badge-${d.status}">${{pending:'未承認',approved:'承認済',posted:'投稿済'}[d.status]}</span></span>
+        <span>${d.created_at ? d.created_at.slice(0,10) : ''}</span>
+      </div>
+      <div class="draft-text" id="dtext-${d.id}">${esc(d.text)}</div>
+      <textarea class="draft-edit" id="dedit-${d.id}">${esc(d.text)}</textarea>
+      <div class="card-actions">
+        ${d.status === 'pending' ? `<button class="ca-btn ca-approve" onclick="approve(${d.id})">承認</button>` : ''}
+        ${d.status === 'approved' ? `<button class="ca-btn ca-unapprove" onclick="unapprove(${d.id})">取消</button>` : ''}
+        ${d.status !== 'posted' ? `<button class="ca-btn ca-edit" id="ebtn-${d.id}" onclick="toggleEdit(${d.id})">編集</button>` : ''}
+        ${d.status !== 'posted' ? `<button class="ca-btn ca-delete" onclick="deleteDraft(${d.id})">削除</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function approve(id) {
+  const d = drafts.find(x => x.id === id);
+  if (d) { d.status = 'approved'; markChanged(); renderDrafts(); updateStats(); }
+}
+function unapprove(id) {
+  const d = drafts.find(x => x.id === id);
+  if (d) { d.status = 'pending'; markChanged(); renderDrafts(); updateStats(); }
+}
+function deleteDraft(id) {
+  if (!confirm('この投稿を削除しますか？')) return;
+  drafts = drafts.filter(x => x.id !== id);
+  markChanged(); renderDrafts(); updateStats();
+}
+function toggleEdit(id) {
+  const textEl = document.getElementById(`dtext-${id}`);
+  const editEl = document.getElementById(`dedit-${id}`);
+  const btnEl = document.getElementById(`ebtn-${id}`);
+  const isEditing = editEl.style.display === 'block';
+  if (isEditing) {
+    const d = drafts.find(x => x.id === id);
+    const newText = editEl.value.trim();
+    if (d && newText !== d.text) { d.text = newText; textEl.innerHTML = esc(newText); markChanged(); }
+    editEl.style.display = 'none'; textEl.style.display = 'block'; btnEl.textContent = '編集';
+  } else {
+    editEl.style.display = 'block'; textEl.style.display = 'none'; btnEl.textContent = '保存';
+  }
+}
+function markChanged() {
+  hasChanges = true;
+  document.getElementById('save-bar').classList.add('visible');
+  document.getElementById('save-bar-text').textContent = `承認済み ${drafts.filter(d=>d.status==='approved').length}件`;
+}
+async function saveAll() {
+  const token = localStorage.getItem('gh_token');
+  if (!token) return;
+  try {
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(drafts, null, 2))));
+    const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE_PATH}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'chore: 投稿を承認', content, sha })
+    });
+    if (res.ok) {
+      const data = await res.json(); sha = data.content.sha;
+      hasChanges = false; document.getElementById('save-bar').classList.remove('visible');
+      showToast('保存しました！');
+    } else { showToast('保存に失敗しました'); }
+  } catch (e) { showToast('エラーが発生しました'); }
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
