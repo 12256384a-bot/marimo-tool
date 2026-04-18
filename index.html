@@ -526,15 +526,16 @@ E｜プロフィール自然誘導（100〜150字）
 
 // ---- Anthropic API直接呼び出し ----
 async function callClaude(apiKey, params) {
+  const cleanKey = (apiKey || '').replace(/[^\x20-\x7E]/g, '').trim();
+  const body = new Blob([JSON.stringify(params)], { type: 'application/json' });
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-      'anthropic-dangerous-allow-browser': 'true'
-    },
-    body: JSON.stringify(params)
+    headers: new Headers([
+      ['x-api-key', cleanKey],
+      ['anthropic-version', '2023-06-01'],
+      ['anthropic-dangerous-allow-browser', 'true']
+    ]),
+    body
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
