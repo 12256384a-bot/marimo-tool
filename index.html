@@ -1025,8 +1025,10 @@ async function analyzeViral() {
       }]
     });
     let analysis;
-    try { analysis = JSON.parse(rawAnalysis); }
-    catch(e) { analysis = { hook_type:'不明', emotion:'不明', structure:'分析エラー', key_elements:[], char_count: text.length }; }
+    try {
+      const m = rawAnalysis.match(/\{[\s\S]*\}/);
+      analysis = JSON.parse(m ? m[0] : rawAnalysis);
+    } catch(e) { analysis = { hook_type:'不明', emotion:'不明', structure:'分析エラー', key_elements:[], char_count: text.length }; }
 
     const newEntry = {
       id: viralExamples.length ? viralExamples[viralExamples.length-1].id + 1 : 1,
