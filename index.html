@@ -364,6 +364,7 @@
       <label style="font-size:12px;color:#555;">GitHub Token（初回のみ）</label>
       <input type="password" id="gh-token-input" placeholder="ghp_..." />
       <button onclick="saveGhToken()">保存して読み込む</button>
+      <button onclick="resetGhToken()" style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;text-decoration:underline;">🔄 トークンをリセット</button>
     </div>
 
     <div class="sub-tabs">
@@ -1106,6 +1107,13 @@ function saveGhToken() {
   localStorage.setItem('gh_token', token);
   document.getElementById('gh-token-area').style.display = 'none';
   loadDrafts();
+}
+
+function resetGhToken() {
+  localStorage.removeItem('gh_token');
+  document.getElementById('gh-token-input').value = '';
+  document.getElementById('gh-token-area').style.display = 'block';
+  document.getElementById('draft-list').innerHTML = '<div class="loading-msg">GitHubトークンを入力してください</div>';
 }
 
 async function loadDrafts() {
