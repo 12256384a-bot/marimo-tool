@@ -1225,6 +1225,10 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
+if (new URLSearchParams(window.location.search).has('reset')) {
+  localStorage.removeItem('gh_token');
+  window.location.href = window.location.pathname;
+}
 </script>
 </body>
 </html>
