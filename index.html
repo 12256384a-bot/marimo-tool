@@ -374,6 +374,9 @@
     </div>
 
     <div id="draft-list"><div class="loading-msg">GitHubトークンを入力してください</div></div>
+    <div id="reset-token-bar" style="display:none;text-align:center;padding:12px;">
+      <button onclick="resetGhToken()" style="background:#f0f0f0;border:1px solid #ccc;border-radius:8px;padding:8px 20px;font-size:13px;cursor:pointer;">🔄 トークンをリセットして再入力</button>
+    </div>
     <div class="pb80"></div>
   </div>
 </div>
@@ -1114,6 +1117,7 @@ function resetGhToken() {
   document.getElementById('gh-token-input').value = '';
   document.getElementById('gh-token-area').style.display = 'block';
   document.getElementById('draft-list').innerHTML = '<div class="loading-msg">GitHubトークンを入力してください</div>';
+  document.getElementById('reset-token-bar').style.display = 'none';
 }
 
 async function loadDrafts() {
@@ -1131,6 +1135,7 @@ async function loadDrafts() {
     renderDrafts(); updateStats();
   } catch (e) {
     document.getElementById('draft-list').innerHTML = '<div class="loading-msg">読み込みに失敗しました</div>';
+    document.getElementById('reset-token-bar').style.display = 'block';
   }
 }
 
